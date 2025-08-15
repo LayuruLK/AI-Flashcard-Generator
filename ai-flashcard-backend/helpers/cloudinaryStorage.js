@@ -21,7 +21,7 @@ const uploadStream = (file, options) => {
 const uploadToCloudinary = async (file) => {
   const fileExtension = file.originalname.split('.').pop().toLowerCase();
   let options = {
-    folder: 'elects_uploads',
+    folder: 'ai_flash_card_profile_photos',
     public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
     resource_type: 'auto'
   };
