@@ -4,6 +4,14 @@ const { Flashcard } = require('../models/Flashcard');
 const { User } = require('../models/User');
 const auth = require('../security/auth'); // 
 
+const multer = require('multer');
+const { uploadToCloudinary } = require('../helpers/cloudinaryStorage');
+const fs = require('fs');
+const pdfParse = require('pdf-parse'); // for PDF text extraction
+const { generateFlashcardsFromText } = require('../services/aiFlashcardService');
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 // ✅ Get all flashcards (pagination optional)
 router.get('/', auth, async (req, res) => {
     try {
@@ -132,5 +140,62 @@ router.get('/get/count', auth, async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+
+// ✅ Generate flashcards from uploaded resource or pasted text
+router.post('/generate-from-resource', auth, upload.single('resource'), async (req, res) => {
+    try {
+        let extractedText = '';
+        let cloudinaryUrl = null;
+
+        // 1️⃣ Handle file upload if provided
+        if (req.file) {
+            // Upload file to Cloudinary
+            cloudinaryUrl = await uploadToCloudinary(req.file);
+
+            // Extract file extension
+            const ext = req.file.originalname.split('.').pop().toLowerCase();
+
+            if (ext === 'pdf') {
+                const data = await pdfParse(req.file.buffer);
+                extractedText = data.text;
+            } else if (['txt', 'md'].includes(ext)) {
+                extractedText = req.file.buffer.toString('utf-8');
+            } else {
+                return res.status(400).json({ success: false, message: 'Unsupported file type for text extraction' });
+            }
+        } 
+
+        // 2️⃣ Handle pasted text if provided
+        else if (req.body.text && req.body.text.trim()) {
+            extractedText = req.body.text.trim();
+        } 
+
+        // 3️⃣ No valid input
+        else {
+            return res.status(400).json({ success: false, message: 'No file or text provided' });
+        }
+
+        // 4️⃣ Check extracted text
+        if (!extractedText.trim()) {
+            return res.status(400).json({ success: false, message: 'No readable text found' });
+        }
+
+        // 5️⃣ Send extracted text to AI for flashcard generation
+        const flashcards = await generateFlashcardsFromText(extractedText);
+
+        // 6️⃣ Return results
+        res.status(200).json({
+            success: true,
+            fileUrl: cloudinaryUrl,
+            generatedFlashcards: flashcards
+        });
+
+    } catch (error) {
+        console.error('Error generating flashcards:', error);
+        res.status(500).json({ success: false, message: 'Error generating flashcards', error: error.message });
+    }
+});
+
 
 module.exports = router;
