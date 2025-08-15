@@ -11,10 +11,12 @@ app.use(express.json());
 
 //Routers
 const usersRoutes = require('./routers/users');
+const flashcardsRoutes = require('./routers/flashcards');
 
 const api = process.env.API_URL
 
 app.use(`${api}/users`, usersRoutes);
+app.use(`${api}/flashcards`, flashcardsRoutes);
 
 // Check for required environment variables
 if (!process.env.CONNECTION_STRING || !process.env.PORT) {
