@@ -52,7 +52,11 @@ const userSchema = mongoose.Schema({
     profilePhoto: {
         type: String,
         required: true
-    }
+    },
+    isGoogleAuth: {
+    type: Boolean,
+    default: false
+  }
 })
 
 exports.User = mongoose.model('User', userSchema);
