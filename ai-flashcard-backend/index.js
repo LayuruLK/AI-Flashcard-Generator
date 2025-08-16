@@ -4,7 +4,13 @@ require('dotenv/config');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
+const passport = require('passport');
+require('./config/passport'); // For JWT strategy
+require('./config/googleStrategy')(); // For Google strategy
+
+
 app.use(cors());
+app.use(passport.initialize());
 
 //middlewares
 app.use(express.json());

@@ -8,6 +8,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const name = 'User';
 
+const passport = require('passport');
+
 // Configure multer to use memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -164,5 +166,51 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ error: 'Password is wrong' });
     }
 });
+
+//Google Auth
+router.get('/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    session: false 
+  })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { 
+    failureRedirect: '/login',
+    session: false 
+  }),
+  async (req, res) => {
+    try {
+      const user = req.user;
+      const secret = process.env.SECRET_KEY;
+      
+      const token = jwt.sign(
+        { userId: user._id },
+        secret,
+        { expiresIn: '1d' }
+      );
+
+      // Return the same response format as your regular login
+      res.status(200).json({ 
+        user: { 
+          _id: user._id, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName, 
+          phone: user.phone, 
+          nic: user.nic, 
+          city: user.city, 
+          district: user.district,
+          isGoogleAuth: user.isGoogleAuth || false
+        }, 
+        token 
+      });
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
 
 module.exports = router;
