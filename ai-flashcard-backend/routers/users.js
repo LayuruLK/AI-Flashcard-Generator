@@ -157,7 +157,7 @@ router.post('/login', async (req, res) => {
                 secret,
                 { expiresIn: '1d' }
             );
-            res.status(200).json({ user: { _id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, nic: user.nic, city: user.city, district: user.district }, token });
+            res.status(200).json({ user: { _id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, nic: user.nic, city: user.city, district: user.district, profilePhoto: user.profilePhoto }, token });
         } catch (error) {
             console.error('Error signing JWT token:', error);
             return res.status(500).json({ error: 'Internal server error' });

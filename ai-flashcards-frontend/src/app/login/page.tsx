@@ -11,6 +11,7 @@ import { signIn } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { EyeIcon } from "@heroicons/react/16/solid";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useUser } from "@/context/UserContext";
 
 // Form validation schema
 const loginSchema = z.object({
@@ -21,7 +22,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const [user, setUser] = useState(null);
+    const { setUser } = useUser();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -41,34 +42,25 @@ export default function LoginPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"  // Add this header
                 },
                 body: JSON.stringify(data),
-                // credentials: "include"  // Only enable if using cookies
             });
+
             const result = await response.json();
 
             if (!response.ok) {
                 throw new Error(result.message || "Login failed");
             }
 
-            // Handle successful login
-            if (result.token) {
-                // If using JWT in localStorage (less secure)
-                localStorage.setItem("token", result.token);
-
-                // If you're also returning user data
-                if (result.user) {
-                    setUser(result.user);
-                }
-
+            if (result.token && result.user) {
+                localStorage.setItem("authToken", result.token);
+                localStorage.setItem("userId", result.user._id);
+                setUser(result.user); // Update context
                 toast.success("Login successful!");
                 router.push("/dashboard");
-            } else {
-                throw new Error("No token received");
             }
         } catch (error: any) {
-            toast.error(error.message || "An error occurred during login");
+            toast.error(error.message || "Login failed");
         } finally {
             setIsLoading(false);
         }
@@ -104,12 +96,14 @@ export default function LoginPage() {
             if (event.data.type === 'google-auth-success') {
                 // 1. Store the token
                 localStorage.setItem('authToken', event.data.token);
+                localStorage.setItem('userId', event.data.user._id);
+
 
                 // 2. Update user state
                 setUser(event.data.user);
 
                 // 3. Redirect to stored path or dashboard
-                const redirectPath ='/dashboard';
+                const redirectPath = '/dashboard';
                 sessionStorage.removeItem('preAuthPath');
                 router.push(redirectPath);
 
