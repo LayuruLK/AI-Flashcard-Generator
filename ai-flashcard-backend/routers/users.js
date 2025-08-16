@@ -169,48 +169,73 @@ router.post('/login', async (req, res) => {
 
 //Google Auth
 router.get('/google',
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    session: false 
-  })
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        session: false
+    })
 );
 
 router.get('/google/callback',
-  passport.authenticate('google', { 
-    failureRedirect: '/login',
-    session: false 
-  }),
-  async (req, res) => {
-    try {
-      const user = req.user;
-      const secret = process.env.SECRET_KEY;
-      
-      const token = jwt.sign(
-        { userId: user._id },
-        secret,
-        { expiresIn: '1d' }
-      );
+    passport.authenticate('google', {
+        failureRedirect: '/login',
+        session: false
+    }),
+    (req, res) => {
+        try {
+            const token = jwt.sign(
+                { userId: req.user._id },
+                process.env.JWT_SECRET,
+                { expiresIn: '1d' }
+            );
 
-      // Return the same response format as your regular login
-      res.status(200).json({ 
-        user: { 
-          _id: user._id, 
-          email: user.email, 
-          firstName: user.firstName, 
-          lastName: user.lastName, 
-          phone: user.phone, 
-          nic: user.nic, 
-          city: user.city, 
-          district: user.district,
-          isGoogleAuth: user.isGoogleAuth || false
-        }, 
-        token 
-      });
-    } catch (error) {
-      console.error('Google OAuth callback error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+            res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Authentication Complete</title>
+            <script>
+              // Ensure the window.opener exists before posting message
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                  type: 'google-auth-success',
+                  token: "${token}",
+                  user: ${JSON.stringify({
+                _id: req.user._id,
+                email: req.user.email,
+                firstName: req.user.firstName,
+                lastName: req.user.lastName
+            })}
+                }, "${process.env.FRONTEND_URL}");
+              }
+              window.close();
+            </script>
+          </head>
+          <body>
+            <p style="text-align: center; margin-top: 50px;">
+              Authentication successful. Closing window...
+            </p>
+            <script>
+              // Fallback in case window doesn't close automatically
+              setTimeout(() => {
+                window.close();
+              }, 1000);
+            </script>
+          </body>
+        </html>
+      `);
+        } catch (error) {
+            res.send(`
+        <script>
+          if (window.opener && !window.opener.closed) {
+            window.opener.postMessage({
+              type: 'google-auth-error',
+              error: "Authentication failed"
+            }, "${process.env.FRONTEND_URL}");
+          }
+          window.close();
+        </script>
+      `);
+        }
     }
-  }
 );
-
 module.exports = router;

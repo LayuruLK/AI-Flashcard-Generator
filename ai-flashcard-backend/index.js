@@ -8,12 +8,28 @@ const passport = require('passport');
 require('./config/passport'); // For JWT strategy
 require('./config/googleStrategy')(); // For Google strategy
 
+// Configure CORS
+const corsOptions = {
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
+};
+
 
 app.use(cors());
 app.use(passport.initialize());
+app.use(cors(corsOptions));
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  methods: ['GET', 'POST'],
+  credentials: true,
+  allowedHeaders: ['Content-Type']
+}));
 
 //middlewares
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 //Routers
 const usersRoutes = require('./routers/users');
