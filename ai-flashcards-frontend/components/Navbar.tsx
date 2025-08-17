@@ -43,7 +43,7 @@ export default function Navbar() {
                             <span>Flashcards</span>
                         </Link>
 
-                        <div className="hidden md:block ml-10">
+                        <div className="hidden md:block ml-50">
                             <div className="flex space-x-4">
                                 <NavLink href="/dashboard" icon={<FiHome className="mr-1" />}>
                                     Dashboard
