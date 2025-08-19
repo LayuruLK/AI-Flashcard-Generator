@@ -9,6 +9,7 @@ const { uploadToCloudinary } = require('../helpers/cloudinaryStorage');
 const fs = require('fs');
 const pdfParse = require('pdf-parse'); // for PDF text extraction
 const { generateFlashcardsFromText } = require('../services/aiFlashcardService');
+const { FlashcardGeneration } = require('../models/FlashcardGenerationModel');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -143,57 +144,84 @@ router.get('/get/count', auth, async (req, res) => {
 
 
 // ✅ Generate flashcards from uploaded resource or pasted text
-router.post('/generate-from-resource', auth, upload.single('resource'), async (req, res) => {
+router.post('/generate-from-resource/:userId', auth, upload.single('resource'), async (req, res) => {
     try {
+        const userId = req.params.userId; 
         let extractedText = '';
-        let cloudinaryUrl = null;
+        let fileUrl = null;
+        let fileType = null;
+        let originalContent = '';
 
         // 1️⃣ Handle file upload if provided
         if (req.file) {
             // Upload file to Cloudinary
-            cloudinaryUrl = await uploadToCloudinary(req.file);
+            fileUrl = await uploadToCloudinary(req.file);
+            fileType = req.file.originalname.split('.').pop().toLowerCase();
 
-            // Extract file extension
-            const ext = req.file.originalname.split('.').pop().toLowerCase();
-
-            if (ext === 'pdf') {
+            if (fileType === 'pdf') {
                 const data = await pdfParse(req.file.buffer);
                 extractedText = data.text;
-            } else if (['txt', 'md'].includes(ext)) {
+                originalContent = extractedText;
+            } else if (['txt', 'md'].includes(fileType)) {
                 extractedText = req.file.buffer.toString('utf-8');
+                originalContent = extractedText;
             } else {
-                return res.status(400).json({ success: false, message: 'Unsupported file type for text extraction' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Unsupported file type for text extraction'
+                });
             }
-        } 
-
+        }
         // 2️⃣ Handle pasted text if provided
         else if (req.body.text && req.body.text.trim()) {
             extractedText = req.body.text.trim();
-        } 
-
+            originalContent = extractedText;
+        }
         // 3️⃣ No valid input
         else {
-            return res.status(400).json({ success: false, message: 'No file or text provided' });
+            return res.status(400).json({
+                success: false,
+                message: 'No file or text provided'
+            });
         }
 
         // 4️⃣ Check extracted text
         if (!extractedText.trim()) {
-            return res.status(400).json({ success: false, message: 'No readable text found' });
+            return res.status(400).json({
+                success: false,
+                message: 'No readable text found'
+            });
         }
 
-        // 5️⃣ Send extracted text to AI for flashcard generation
+        // 5️⃣ Generate flashcards
         const flashcards = await generateFlashcardsFromText(extractedText);
 
-        // 6️⃣ Return results
+        // 6️⃣ Save to FlashcardGeneration model
+        const generationRecord = new FlashcardGeneration({
+            userId,
+            originalContent,
+            fileUrl,
+            fileType,
+            flashcards
+        });
+
+        await generationRecord.save();
+
+        // 7️⃣ Return results
         res.status(200).json({
             success: true,
-            fileUrl: cloudinaryUrl,
+            generationId: generationRecord._id,
+            fileUrl,
             generatedFlashcards: flashcards
         });
 
     } catch (error) {
         console.error('Error generating flashcards:', error);
-        res.status(500).json({ success: false, message: 'Error generating flashcards', error: error.message });
+        res.status(500).json({
+            success: false,
+            message: 'Error generating flashcards',
+            error: error.message
+        });
     }
 });
 

@@ -34,11 +34,13 @@ app.use(express.urlencoded({ extended: true }));
 //Routers
 const usersRoutes = require('./routers/users');
 const flashcardsRoutes = require('./routers/flashcards');
+const flashcardhistoryRoutes = require('./routers/flashcardhistory');
 
 const api = process.env.API_URL
 
 app.use(`${api}/users`, usersRoutes);
 app.use(`${api}/flashcards`, flashcardsRoutes);
+app.use(`${api}/flashcardshistory`, flashcardhistoryRoutes);
 
 // Check for required environment variables
 if (!process.env.CONNECTION_STRING || !process.env.PORT) {

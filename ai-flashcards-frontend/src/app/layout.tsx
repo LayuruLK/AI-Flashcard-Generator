@@ -32,8 +32,19 @@ export default function RootLayout({
       >
           <UserProvider>
             {children}
+            <ToastContainer 
+              position="bottom-right" 
+              theme="dark"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
           </UserProvider>
-           <ToastContainer position="bottom-right" theme="dark"/>
       </body>
     </html>
   );

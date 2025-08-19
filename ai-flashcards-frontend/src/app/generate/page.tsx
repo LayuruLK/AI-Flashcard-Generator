@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import Navbar from '../../../components/Navbar';
 import Swal from 'sweetalert2';
 import { FlashcardDisplay } from '../../../components/FlashcardDisplay';
+import Footer from '../../../components/Footer';
 
 const FlashcardGenerator = () => {
     const router = useRouter();
@@ -42,6 +43,8 @@ const FlashcardGenerator = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const userId = localStorage.getItem('userId');
 
         // Check authentication
         const token = localStorage.getItem('authToken');
@@ -98,7 +101,7 @@ const FlashcardGenerator = () => {
                 formData.append('text', textInput);
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/flashcards/generate-from-resource`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/flashcards/generate-from-resource/${userId}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -327,6 +330,7 @@ const FlashcardGenerator = () => {
                     </div>
                 )} */}
             </div>
+            <Footer/>
         </>
     );
 

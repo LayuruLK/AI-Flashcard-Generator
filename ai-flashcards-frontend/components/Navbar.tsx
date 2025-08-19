@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 import { useUser } from '@/context/UserContext';
 
 export default function Navbar() {
-    const { user, logout } = useUser();
+    const { user, logout, initialized } = useUser();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -31,6 +31,11 @@ export default function Navbar() {
         logout(); // Uses the context logout function
         toast.success("Logged out successfully");
     };
+
+    // Don't render anything until auth state is initialized
+    if (!initialized) {
+        return null;
+    }
 
     return (
         <nav className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg sticky top-0 z-50">

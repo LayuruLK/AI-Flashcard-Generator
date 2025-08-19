@@ -7,6 +7,7 @@ import { FaSearch, FaTrash, FaDownload, FaFilter, FaTimes } from 'react-icons/fa
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import Navbar from '../../../components/Navbar';
 import { toPng, toJpeg, toBlob } from 'html-to-image';
+import Footer from '../../../components/Footer';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -580,6 +581,7 @@ const SavedFlashcardsPage = () => {
                     )}
                 </div>
             </div>
+            <Footer/>
         </>
     );
 };

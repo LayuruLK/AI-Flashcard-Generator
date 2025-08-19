@@ -9,47 +9,55 @@ type User = {
   firstName: string;
   lastName: string;
   profilePhoto: string;
-  // Add other user fields as needed
 };
 
 type UserContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
   logout: () => void;
+  initialized: boolean; // Track if auth check is complete
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Check for existing auth on initial load
-    const token = localStorage.getItem('authToken');
-    const userId = localStorage.getItem('userId');
-    
-    if (token && userId) {
-      // Fetch user data if token exists
-      fetchUserData(userId);
-    }
-  }, []);
-
-  const fetchUserData = async (userId: string) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/profile/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      const userId = localStorage.getItem('userId');
+      
+      if (token && userId) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/users/profile/${userId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+          } else {
+            // Token is invalid, clear storage
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userId');
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+          // Clear storage on error
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userId');
         }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setUser(data.user);
       }
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-    }
-  };
+      setInitialized(true);
+    };
+
+    initializeAuth();
+  }, []);
 
   const logout = () => {
     localStorage.removeItem('authToken');
@@ -59,7 +67,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout }}>
+    <UserContext.Provider value={{ user, setUser, logout, initialized }}>
       {children}
     </UserContext.Provider>
   );

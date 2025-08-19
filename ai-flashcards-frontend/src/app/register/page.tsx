@@ -10,6 +10,7 @@ import { FcGoogle } from "react-icons/fc";
 import { signIn } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
+import Footer from "../../../components/Footer";
 
 // Form validation schema
 const registerSchema = z
@@ -111,6 +112,7 @@ export default function RegisterPage() {
     };
 
     return (
+        <>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
             <div className="w-full max-w-6xl">
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -557,5 +559,7 @@ export default function RegisterPage() {
                 </div>
             </div>
         </div>
+        <Footer/>
+        </>
     );
 }

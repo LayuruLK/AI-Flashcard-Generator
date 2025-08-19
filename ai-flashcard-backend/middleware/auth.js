@@ -4,7 +4,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const {User} = require('../models/User');
 
 // JWT configuration
 const jwtOptions = {
@@ -63,7 +63,18 @@ const generateToken = (user) => {
 };
 
 // Middleware to protect routes
-const authenticate = passport.authenticate('jwt', { session: false });
+const authenticate = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    req.user = user; // Attach the full user object
+    next();
+  })(req, res, next);
+};
 
 module.exports = {
   passport,
